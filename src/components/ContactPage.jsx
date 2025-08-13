@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-// Removed the direct import for emailjs. It will now be loaded as a global script.
+
 import { Send, User, Mail, MessageSquare, BookOpen, CheckCircle, XCircle, MapPin, Phone, Linkedin, Twitter, Github } from 'lucide-react';
 
 
