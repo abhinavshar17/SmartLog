@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import emailjs from 'https://esm.sh/@emailjs/browser';
+// Removed the direct import for emailjs. It will now be loaded as a global script.
 import { Send, User, Mail, MessageSquare, BookOpen, CheckCircle, XCircle, MapPin, Phone, Linkedin, Twitter, Github } from 'lucide-react';
 
 
@@ -43,6 +43,27 @@ const ContactPage = ({ darkMode, navigateTo, setDarkMode }) => {
         return () => clearTimeout(timer);
     }, []);
 
+    // This useEffect hook loads the emailjs library dynamically as a global script.
+    useEffect(() => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js';
+        script.async = true; // Load script asynchronously
+        script.onload = () => {
+            console.log('emailjs script loaded successfully.');
+            // You can optionally initialize emailjs here if needed
+            // e.g., if (window.emailjs) window.emailjs.init("YOUR_PUBLIC_KEY");
+        };
+        script.onerror = (error) => {
+            console.error('Failed to load emailjs script:', error);
+        };
+        document.body.appendChild(script);
+
+        // Cleanup function to remove the script when the component unmounts
+        return () => {
+            document.body.removeChild(script);
+        };
+    }, []); // Empty dependency array ensures this runs only once on component mount
+
     useEffect(() => {
         if (showToast) {
             const toastTimer = setTimeout(() => {
@@ -82,7 +103,7 @@ const ContactPage = ({ darkMode, navigateTo, setDarkMode }) => {
         return Object.keys(newErrors).length === 0;
     };
 
-  
+    
     const handleSubmit = (e) => {
         e.preventDefault();
         setSubmissionStatus(null);
@@ -98,20 +119,28 @@ const ContactPage = ({ darkMode, navigateTo, setDarkMode }) => {
         const templateID = 'template_22c3a2a';
         const publicKey = 'bcz_108RDETTP_XP4';
 
-        emailjs.send(serviceID, templateID, formData, publicKey)
-            .then((response) => {
-                console.log('SUCCESS!', response.status, response.text);
-                setSubmissionStatus('success');
-                setFormData({ name: '', email: '', subject: '', message: '' }); // Clear form
-            })
-            .catch((err) => {
-                console.error('FAILED...', err);
-                setSubmissionStatus('error');
-            })
-            .finally(() => {
-                setIsSubmitting(false);
-                setShowToast(true);
-            });
+        // Use window.emailjs to access the globally loaded library
+        if (window.emailjs) {
+            window.emailjs.send(serviceID, templateID, formData, publicKey)
+                .then((response) => {
+                    console.log('SUCCESS!', response.status, response.text);
+                    setSubmissionStatus('success');
+                    setFormData({ name: '', email: '', subject: '', message: '' }); // Clear form
+                })
+                .catch((err) => {
+                    console.error('FAILED...', err);
+                    setSubmissionStatus('error');
+                })
+                .finally(() => {
+                    setIsSubmitting(false);
+                    setShowToast(true);
+                });
+        } else {
+            console.error('EmailJS library is not loaded.');
+            setSubmissionStatus('error');
+            setIsSubmitting(false);
+            setShowToast(true);
+        }
     };
 
     return (
@@ -241,7 +270,7 @@ const ContactPage = ({ darkMode, navigateTo, setDarkMode }) => {
                                 </div>
 
                                 <div className={`relative transition-all duration-500 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}`} style={{ transitionDelay: '900ms' }}>
-                                     <div className="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
+                                    <div className="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
                                         <MessageSquare size={20} className={`${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                                     </div>
                                     <textarea
