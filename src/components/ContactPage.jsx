@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 // Import specific icons from lucide-react. This is the correct way to import them.
-import { Send, User, Mail, MessageSquare, BookOpen, CheckCircle, XCircle, MapPin, Phone, Linkedin, Twitter, Github } from 'lucide-react';
+import { Send, User, Mail, MessageSquare, BookOpen, CheckCircle, XCircle, MapPin, Phone, Linkedin, Twitter, Github, Sun, Moon } from 'lucide-react';
 
 // Footer Component: Displays copyright information.
 const Footer = () => {
@@ -51,13 +51,13 @@ const ContactPage = ({ darkMode, navigateTo, setDarkMode }) => {
     // State to control the visibility of the toast notification
     const [showToast, setShowToast] = useState(false);
 
-    // useEffect to trigger the initial fade-in animation for the content card
+    // Effect to trigger the initial fade-in animation for the content card
     useEffect(() => {
         const timer = setTimeout(() => setIsVisible(true), 100);
         return () => clearTimeout(timer); // Cleanup timer on unmount
     }, []);
 
-    // useEffect to dynamically load the emailjs library as a global script
+    // Effect to dynamically load the emailjs library as a global script.
     // This resolves "Dynamic require" errors often seen in certain environments.
     useEffect(() => {
         const script = document.createElement('script');
@@ -66,7 +66,8 @@ const ContactPage = ({ darkMode, navigateTo, setDarkMode }) => {
         
         script.onload = () => {
             console.log('emailjs script loaded successfully.');
-            // No explicit initialization needed here if using public key in send method.
+            // EmailJS library initializes itself when loaded, no explicit init needed here
+            // if you're passing the public key directly in the send method.
         };
         
         script.onerror = (error) => {
@@ -77,11 +78,14 @@ const ContactPage = ({ darkMode, navigateTo, setDarkMode }) => {
 
         // Cleanup function: remove the script from the DOM when the component unmounts
         return () => {
-            document.body.removeChild(script);
+            // Check if the script exists before trying to remove it
+            if (document.body.contains(script)) {
+                document.body.removeChild(script);
+            }
         };
     }, []); // Empty dependency array ensures this effect runs only once on mount
 
-    // useEffect to manage the auto-hiding of the toast notification
+    // Effect to manage the auto-hiding of the toast notification
     useEffect(() => {
         if (showToast) {
             const toastTimer = setTimeout(() => {
@@ -143,7 +147,7 @@ const ContactPage = ({ darkMode, navigateTo, setDarkMode }) => {
 
         setIsSubmitting(true); // Set submitting state to true to show loading indicator
 
-        // EmailJS service credentials (replace with your actual credentials)
+        // EmailJS service credentials (replace with your actual credentials if different)
         const serviceID = 'service_sc9xokh';
         const templateID = 'template_22c3a2a';
         const publicKey = 'bcz_108RDETTP_XP4'; // Your EmailJS Public Key
@@ -153,12 +157,12 @@ const ContactPage = ({ darkMode, navigateTo, setDarkMode }) => {
             // Send the email using EmailJS
             window.emailjs.send(serviceID, templateID, formData, publicKey)
                 .then((response) => {
-                    console.log('SUCCESS!', response.status, response.text);
+                    console.log('Email sent successfully!', response.status, response.text);
                     setSubmissionStatus('success'); // Set success status
                     setFormData({ name: '', email: '', subject: '', message: '' }); // Clear the form fields
                 })
                 .catch((err) => {
-                    console.error('FAILED...', err);
+                    console.error('Failed to send email:', err);
                     setSubmissionStatus('error'); // Set error status
                 })
                 .finally(() => {
@@ -197,7 +201,7 @@ const ContactPage = ({ darkMode, navigateTo, setDarkMode }) => {
                     className={`p-2 rounded-full transition-colors duration-300 ${darkMode ? 'bg-yellow-400 text-gray-900' : 'bg-gray-800 text-white'}`}
                     aria-label="Toggle dark mode"
                 >
-                    {darkMode ? '☀️' : '🌙'} {/* Sun icon for dark mode, moon for light mode */}
+                    {darkMode ? <Sun size={20} /> : <Moon size={20} />} {/* Sun icon for light, moon for dark mode */}
                 </button>
             </div>
 
@@ -240,9 +244,9 @@ const ContactPage = ({ darkMode, navigateTo, setDarkMode }) => {
 
                             {/* Social Media Icons */}
                             <div className="mt-10 flex space-x-6 justify-center md:justify-start">
-                                <a href="#" className="text-gray-300 hover:text-blue-300 transition-colors duration-200"><Linkedin size={24} /></a>
-                                <a href="#" className="text-gray-300 hover:text-blue-300 transition-colors duration-200"><Twitter size={24} /></a>
-                                <a href="#" className="text-gray-300 hover:text-blue-300 transition-colors duration-200"><Github size={24} /></a>
+                                <a href="#" className="text-gray-300 hover:text-blue-300 transition-colors duration-200" aria-label="LinkedIn"><Linkedin size={24} /></a>
+                                <a href="#" className="text-gray-300 hover:text-blue-300 transition-colors duration-200" aria-label="Twitter"><Twitter size={24} /></a>
+                                <a href="#" className="text-gray-300 hover:text-blue-300 transition-colors duration-200" aria-label="GitHub"><Github size={24} /></a>
                             </div>
                         </div>
 
