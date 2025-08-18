@@ -24,6 +24,9 @@ export default function AddTransactionModal({ showModal = true, setShowModal = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { currency, locale, setCurrency, setLocale } = useCurrency();
   const [errors, setErrors] = useState({});
+  const suggestedCategories = ['Food', 'Transport', 'Groceries', 'Entertainment', 'Bills', 'Shopping', 'Rent', 'Utilities', 'EMI', 'Others'];
+  const [categorySuggestions, setCategorySuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const getCurrencySymbol = (currency, locale) => {
     return (0).toLocaleString(locale, {
@@ -33,7 +36,6 @@ export default function AddTransactionModal({ showModal = true, setShowModal = (
       maximumFractionDigits: 0,
     }).replace(/\d/g, "").trim();
   };
-
 
   useEffect(() => {
     if (showModal) {
@@ -46,7 +48,7 @@ export default function AddTransactionModal({ showModal = true, setShowModal = (
     if (!form.amount || parseFloat(form.amount) <= 0) {
      newErrors.amount = "Please enter a valid amount";
     }
-    if (!form.category.trim()) {
+    if (form.type==="Expense" && !form.category.trim()) {
       newErrors.category = "Category is required";
     }
     setErrors(newErrors);
@@ -92,6 +94,7 @@ const handleSubmit = async (e) => {
       setErrors({});
     }
   };
+  
   const handleClose = () => {
     setIsVisible(false);
     setTimeout(() => setShowModal(false), 300);
@@ -102,6 +105,16 @@ const handleSubmit = async (e) => {
      if (field === "date") {
       newValue = formatDate(value);
     }
+
+    if (field === "category") {
+      const input = value.toLowerCase();
+      const filtered = suggestedCategories.filter(cat =>
+        cat.toLowerCase().includes(input) && input
+      );
+      setCategorySuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+    }
+
     setForm({ ...form, [field]: newValue });
     if (errors[field]) {
       setErrors({ ...errors, [field]: " " });
@@ -149,18 +162,18 @@ const handleSubmit = async (e) => {
           <div className="p-6 space-y-6">
            
             <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Amount</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Amount*</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">{getCurrencySymbol(currency,locale)}</span>
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 font-medium">{getCurrencySymbol(currency,locale)}</span>
                 <input
                   type="number"
                   step="0.01"
                   value={form.amount}
                   onChange={e => handleInputChange("amount", e.target.value)}
-                  className={`w-full pl-8 pr-4 py-3 border-2 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  className={`w-full pl-8 pr-4 py-3 border-2 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white ${
                     errors.amount 
                       ? 'border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-700' 
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 dark:bg-gray-700 dark:text-white'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-700'
                   }`}
                   placeholder="0.00"
                 />
@@ -169,25 +182,50 @@ const handleSubmit = async (e) => {
             </div>
 
 
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Category</label>
-              <input
-                type="text"
-                value={form.category}
-                 onChange={e => handleInputChange("category", e.target.value)}
-                className={`w-full px-4 py-3 border-2 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.category 
-                    ? 'border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-700' 
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 dark:bg-gray-700 dark:text-white'
-                }`}
-                placeholder="e.g., Food, Transport, Entertainment"
-              />
-              {errors.category && <p className="text-red-500 dark:text-red-400 text-sm animate-pulse">{errors.category}</p>}
-            </div>
+            {form.type === "Expense" && (
+              <div className="space-y-2 relative">
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Category*</label>
+                <input
+                  type="text"
+                  value={form.category}
+                  onChange={e => handleInputChange("category", e.target.value)}
+                  onFocus={() => setShowSuggestions(categorySuggestions.length > 0)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
+                  className={`w-full px-4 py-3 border-2 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white ${
+                    errors.category 
+                      ? 'border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-700' 
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-700'
+                  }`}
+                  placeholder="e.g., Food, Transport, Entertainment"
+                />
+                {errors.category && <p className="text-red-500 dark:text-red-400 text-sm animate-pulse">{errors.category}</p>}
+
+              {/* 💡 Suggestion Dropdown */}
+                {showSuggestions && (
+                  <ul className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl max-h-48 overflow-auto shadow-lg">
+                    {categorySuggestions.map((suggestion, index) => (
+                      <li
+                        key={index}
+                        onMouseDown={() => {
+                          setForm(prev => ({ ...prev, category: suggestion }));
+                          setShowSuggestions(false);
+                          setCategorySuggestions([]);
+                        }}
+                        className="px-4 py-2 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-600 text-gray-900 dark:text-white transition-colors"
+                      >
+                        {suggestion}
+                      </li>
+
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )} 
+
 
     
             <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Type</label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Transaction type*</label>
               <div className="flex bg-gray-100 dark:bg-gray-700 rounded-xl p-1">
                 {['Income', 'Expense'].map((type) => (
                   <button
@@ -197,9 +235,9 @@ const handleSubmit = async (e) => {
                     className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 ${
                       form.type === type
                         ? type === 'Income' 
-                          ? 'bg-green-500 text-white shadow-md transform scale-105 dark:bg-green-600'
-                          : 'bg-red-500 text-white shadow-md transform scale-105 dark:bg-red-600'
-                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
+                          ? 'bg-green-500 text-white shadow-md transform scale-100 dark:bg-green-600'
+                          : 'bg-red-500 text-white shadow-md transform scale-100 dark:bg-red-600'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer'
                     }`}
                   >
                     {type}
@@ -221,10 +259,10 @@ const handleSubmit = async (e) => {
                   })()
                 }
                 onChange={(e) => handleInputChange('date', e.target.value)}
-                className={`w-full px-4 py-3 border-2 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                className={`w-full px-4 py-3 border-2 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white ${
                   errors.date 
                     ? 'border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-700' 
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 dark:bg-gray-700 dark:text-white'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-700'
                 }`}
               />
                {errors.date && <p className="text-red-500 dark:text-red-400 text-sm animate-pulse">{errors.date}</p>}
@@ -237,7 +275,8 @@ const handleSubmit = async (e) => {
                 value={form.note}
                 onChange={e => handleInputChange("note", e.target.value)}
                 rows={3}
-                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl resize-none transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-300 dark:hover:border-gray-600 dark:bg-gray-700 dark:text-white"
+                maxLength={30}
+                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl resize-none transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 placeholder="Add a note about this transaction..."
               />
             </div>
